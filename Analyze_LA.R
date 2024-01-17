@@ -93,6 +93,12 @@ data=data%>%
          water_notoffshore_flag = OFFSHORE_FLAG==0&Site.Clearance.Required.!="No, land location",
          water_notoffshore_flag = replace(water_notoffshore_flag, is.na(water_notoffshore_flag),0))
 
+ggplot(data=data%>%mutate(water_notoffshore_flag=as.character(water_notoffshore_flag))%>%filter(OFFSHORE_FLAG==0))+
+  geom_sf(aes(color=water_notoffshore_flag),size=0.5)+
+  geom_sf(data=counties, fill=NA)+
+  coord_sf(xlim=c(-94,-89), ylim=c(28.5,30))+
+  theme_bw()
+
 data=data%>%
   mutate(plug_cost1 = 12*MD_FT,
          plug_cost1 = replace(plug_cost1, OFFSHORE_FLAG==1, 1500000),
@@ -168,7 +174,7 @@ operator_marginal = data%>%
   data.frame()%>%
   mutate(BOEperday = (Last12MonthGasProduction_MCF*6+Last12MonthOilProduction_BBL)/365)%>%
   filter(Well.Status.Code.Description.x%in%c('SHUT-IN PRODUCTIVE -FUTURE UTILITY', 'SHUT-IN DRY HOLE -FUTURE UTILITY', 'SHUT-IN PRODUCTIVE -NO FUTURE UTILITY', 'SHUT-IN DRY HOLE - NO FUTURE UTILITY', 'SHUT-IN WAITING ON MARKET', 'ACTIVE - PRODUCING', 'PA-35 TEMPORARY INACTIVE WELL TO BE OMITTED FROM PROD.REPORT', 'TEMPORARILY ABANDONED WELL'),
-         BOEperday<15|is.na(BOEperday))%>%
+         marginal_flag==1)%>%
   group_by(Operator.Name, OFFSHORE_FLAG, water_notoffshore_flag)%>%
   summarise(n=n(),
             plug_cost1 = sum(plug_cost1),
@@ -357,7 +363,7 @@ ggplot(data=operator_plug_costs)+
   scale_y_continuous(label=dollar)+
   ylab("Sum of Hypothetical Individual Well Bonds")+
   labs(caption="A line is drawn at x=y")+
-  xlab("Bond Amounts")+
+  xlab("Actual Bond Amounts")+
   theme_bw()
 
 ggsave(filename=paste(codedirectory,"/Figures/Blankets_v_IndBonds.png", sep=""),
@@ -368,7 +374,7 @@ ggplot(data=operator_plug_costs)+
   geom_point(aes(x=bond, y=sum_ind_well_bond))+
   geom_abline(slope=1, intercept=0)+
   scale_x_continuous(label=dollar, limits=c(0,3000000))+
-  scale_y_continuous(label=dollar)+
+  scale_y_continuous(label=dollar, limits=c(0,150000000))+
   ylab("Sum of Hypothetical Individual Well Bonds")+
   labs(caption="A line is drawn at x=y")+
   xlab("Bond Amounts")+
@@ -391,6 +397,19 @@ ggsave(filename=paste(codedirectory,"/Figures/Bonds_v_costs1_marginal.png", sep=
        height=4)
 
 ggplot(data=operator_plug_costs)+
+  geom_point(aes(x=bond, y=plug_cost1_marginal))+
+  geom_abline(slope=1, intercept=0)+
+  scale_x_continuous(label=dollar, limits=c(0,2000000))+
+  scale_y_continuous(label=dollar, limits=c(0,60000000))+
+  ylab("Plugging costs for marginal wells")+
+  labs(caption="A line is drawn at x=y.  Plug costs assume offshore wells cost $1.5mil, onshore cost $12 per foot.")+
+  xlab("Bond Amounts")+
+  theme_bw()
+ggsave(filename=paste(codedirectory,"/Figures/Bonds_v_costs1_marginal_zoomed.png", sep=""),
+       width=6,
+       height=4)
+
+ggplot(data=operator_plug_costs)+
   geom_point(aes(x=bond, y=plug_cost1_shutin))+
   geom_abline(slope=1, intercept=0)+
   scale_x_continuous(label=dollar)+
@@ -400,6 +419,19 @@ ggplot(data=operator_plug_costs)+
   xlab("Bond Amounts")+
   theme_bw()
 ggsave(filename=paste(codedirectory,"/Figures/Bonds_v_costs1_shutin.png", sep=""),
+       width=6,
+       height=4)
+
+ggplot(data=operator_plug_costs)+
+  geom_point(aes(x=bond, y=plug_cost1_shutin))+
+  geom_abline(slope=1, intercept=0)+
+  scale_x_continuous(label=dollar, limits=c(0,2000000))+
+  scale_y_continuous(label=dollar, limits=c(0,60000000))+
+  ylab("Plugging costs for shutin wells")+
+  labs(caption="A line is drawn at x=y.  Plug costs assume offshore wells cost $1.5mil, onshore cost $12 per foot.")+
+  xlab("Bond Amounts")+
+  theme_bw()
+ggsave(filename=paste(codedirectory,"/Figures/Bonds_v_costs1_shutin_zoomed.png", sep=""),
        width=6,
        height=4)
 
@@ -417,6 +449,19 @@ ggsave(filename=paste(codedirectory,"/Figures/Bonds_v_costs2_marginal.png", sep=
        height=4)
 
 ggplot(data=operator_plug_costs)+
+  geom_point(aes(x=bond, y=plug_cost2_marginal))+
+  geom_abline(slope=1, intercept=0)+
+  scale_x_continuous(label=dollar, limits=c(0,2000000))+
+  scale_y_continuous(label=dollar, limits=c(0,60000000))+
+  ylab("Plugging costs for marginal wells")+
+  labs(caption="A line is drawn at x=y.  Plug costs assume offshore wells cost $1.5mil, onshore cost $70k.")+
+  xlab("Bond Amounts")+
+  theme_bw()
+ggsave(filename=paste(codedirectory,"/Figures/Bonds_v_costs2_marginal_zoomed.png", sep=""),
+       width=6,
+       height=4)
+
+ggplot(data=operator_plug_costs)+
   geom_point(aes(x=bond, y=plug_cost2_shutin))+
   geom_abline(slope=1, intercept=0)+
   scale_x_continuous(label=dollar)+
@@ -426,5 +471,20 @@ ggplot(data=operator_plug_costs)+
   xlab("Bond Amounts")+
   theme_bw()
 ggsave(filename=paste(codedirectory,"/Figures/Bonds_v_costs2_shutin.png", sep=""),
+       width=6,
+       height=4)
+
+
+ggplot(data=operator_plug_costs)+
+  geom_point(aes(x=bond, y=plug_cost2_shutin))+
+  geom_abline(slope=1, intercept=0)+
+  scale_x_continuous(label=dollar, limits=c(0,2000000))+
+  scale_y_continuous(label=dollar, limits=c(0,60000000))+
+  ylab("Plugging costs for shutin wells")+
+  labs(caption="A line is drawn at x=y.  Plug costs assume offshore wells cost $1.5mil, onshore cost $70k")+
+  xlab("Bond Amounts")+
+  theme_bw()
+
+ggsave(filename=paste(codedirectory,"/Figures/Bonds_v_costs2_shutin_zoomed.png", sep=""),
        width=6,
        height=4)
